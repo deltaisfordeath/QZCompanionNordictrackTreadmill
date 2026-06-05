@@ -3,12 +3,13 @@ plugins {
 }
 
 android {
-    compileSdkVersion 34
+    namespace "org.cagnulein.qzcompanionnordictracktreadmill"
+    compileSdk 36
 
     defaultConfig {
         applicationId "org.cagnulein.qzcompanionnordictracktreadmill"
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 36
         versionCode 181
         versionName "3.6.29"
 
@@ -26,6 +27,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+
 dependencies {
     implementation 'com.google.mlkit:text-recognition:16.0.0-beta6'
     implementation "androidx.core:core-ktx:1.12.0"

@@ -52,6 +52,7 @@ public class QZService extends Service {
     static String lastResistance = "";
     String lastGear = "";
     static String lastHeart = "";
+    static String lastDistance = "";
     static SharedPreferences sharedPreferences;
 
     static boolean ifit_v2 = false;
@@ -219,6 +220,31 @@ public class QZService extends Service {
                 }
             } catch (Exception e) {
                 writeLog("Error parsing heart rate: " + e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    private boolean distance(InputStream in) throws IOException {
+        BufferedReader is = new BufferedReader(new InputStreamReader(in));
+        String line;
+        while ((line = is.readLine()) != null) {
+            try {
+                // Log format: "07:54:31.511 INFO SDS Console Basic Info: ... Distance: 482.0 m, ..."
+                int idx = line.indexOf("Distance: ");
+                if (idx >= 0) {
+                    String after = line.substring(idx + "Distance: ".length());
+                    String[] tokens = after.split("\\s+");
+                    if (tokens.length >= 2 && tokens[1].startsWith("m")) {
+                        float distanceM = Float.parseFloat(tokens[0]);
+                        float distanceKm = distanceM / 1000.0f;
+                        lastDistance = "Changed Distance " + String.format("%.3f", distanceKm);
+                        sendBroadcast(lastDistance);
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                writeLog("Error parsing distance: " + e.getMessage());
             }
         }
         return false;
@@ -663,6 +689,16 @@ public class QZService extends Service {
                         heart2InputStream.close();
                     }
                     heartInputStream.close();
+
+                    InputStream distanceInputStream = shellRuntime.execAndGetOutput("tail -n500 " + file + " | grep -a \"Console Basic Info\" | tail -n1");
+                    if(!distance(distanceInputStream)) {
+                        InputStream distance2InputStream = shellRuntime.execAndGetOutput("grep -a \"Console Basic Info\" " + file + " | tail -n1");
+                        if(!distance(distance2InputStream)) {
+                            sendBroadcast(lastDistance);
+                        }
+                        distance2InputStream.close();
+                    }
+                    distanceInputStream.close();
 
 					if(counterTruncate++ > 1200) {
 						writeLog("Truncating file...");
