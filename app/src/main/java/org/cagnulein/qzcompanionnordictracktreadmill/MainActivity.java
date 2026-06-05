@@ -24,6 +24,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -382,6 +383,34 @@ public class MainActivity extends AppCompatActivity  implements DeviceConnection
         radioButton = findViewById(device);
         if(radioButton != null)
             radioButton.setChecked(true);
+
+        EditText udpPortEdit = findViewById(R.id.udpPort);
+        udpPortEdit.setText(String.valueOf(sharedPreferences.getInt("clientPort", 8002)));
+        Button savePort = findViewById(R.id.savePort);
+        savePort.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    int port = Integer.parseInt(udpPortEdit.getText().toString().trim());
+                    if (port < 1024 || port > 65535) throw new NumberFormatException();
+                    SharedPreferences.Editor myEdit = sharedPreferences.edit();
+                    myEdit.putInt("clientPort", port);
+                    myEdit.commit();
+                    QZService.clientPort = port;
+                    new AlertDialog.Builder(view.getContext())
+                            .setTitle("Port Saved")
+                            .setMessage("UDP port set to " + port + ". Restart the app to apply.")
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show();
+                } catch (NumberFormatException e) {
+                    new AlertDialog.Builder(view.getContext())
+                            .setTitle("Invalid Port")
+                            .setMessage("Please enter a valid port number (1024–65535).")
+                            .setPositiveButton("OK", (dialog, which) -> dialog.dismiss())
+                            .show();
+                }
+            }
+        });
 
         Button dumplog = findViewById(R.id.dumplog);
         dumplog.setOnClickListener(new View.OnClickListener() {

@@ -65,6 +65,7 @@ public class QZService extends Service {
     public void onCreate() {
 
         sharedPreferences = getSharedPreferences("QZ",MODE_PRIVATE);
+        clientPort = sharedPreferences.getInt("clientPort", 8002);
         try {
             broadcastAddress = getBroadcastAddress();
         } catch (IOException e) {
