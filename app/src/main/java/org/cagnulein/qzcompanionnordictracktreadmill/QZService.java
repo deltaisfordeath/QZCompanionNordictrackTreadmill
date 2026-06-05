@@ -202,6 +202,28 @@ public class QZService extends Service {
         return  false;
     }
 
+    private boolean heart(InputStream in) throws IOException {
+        BufferedReader is = new BufferedReader(new InputStreamReader(in));
+        String line;
+        while ((line = is.readLine()) != null) {
+            try {
+                // Log format: "18:22:53.886 INFO SDS Setting values: PULSE -> 73"
+                String[] parts = line.split("->");
+                if (parts.length >= 2) {
+                    int hr = Integer.parseInt(parts[parts.length - 1].trim());
+                    if (hr > 0 && hr < 250) {
+                        lastHeart = "Changed Heart " + hr;
+                        sendBroadcast(lastHeart);
+                        return true;
+                    }
+                }
+            } catch (Exception e) {
+                writeLog("Error parsing heart rate: " + e.getMessage());
+            }
+        }
+        return false;
+    }
+
     private static Rect wattRectCache = null;
 
     private Rect rectFromString(String str) {
@@ -631,6 +653,16 @@ public class QZService extends Service {
 						resistance2InputStream.close();
 					}
 					resistanceInputStream.close();
+
+                    InputStream heartInputStream = shellRuntime.execAndGetOutput("tail -n500 " + file + " | grep -a \"Setting values: PULSE ->\" | tail -n1");
+                    if(!heart(heartInputStream)) {
+                        InputStream heart2InputStream = shellRuntime.execAndGetOutput("grep -a \"Setting values: PULSE ->\" " + file + " | tail -n1");
+                        if(!heart(heart2InputStream)) {
+                            sendBroadcast(lastHeart);
+                        }
+                        heart2InputStream.close();
+                    }
+                    heartInputStream.close();
 
 					if(counterTruncate++ > 1200) {
 						writeLog("Truncating file...");
